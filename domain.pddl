@@ -1,10 +1,10 @@
-(define (domain elevators-sequencedstrips)
+(define (domain software-development-process)
   (:requirements :typing :action-costs)
-  (:types 	elevator - object 
-			slow-elevator fast-elevator - elevator
-   			passenger - object
-          	count - object
-         )
+  (:types individual_contributor - object 
+	  developer tester - individual_contributor
+   	  project - object
+          task - object
+  )
 
 (:predicates 
 	(passenger-at ?person - passenger ?floor - count)
