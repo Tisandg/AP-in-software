@@ -1,12 +1,20 @@
 (define (domain software-development-process)
   (:requirements :typing :action-costs)
-  (:types individual_contributor - object 
-	  developer tester - individual_contributor
-   	  project - object
-          task - object
+  (:types roles - object
+	        developer tester - roles
+   	      project task state expertise time - object
+          state-project state-task - state
+          time-limit time-required-dev time-required-test - time
   )
 
 (:predicates 
+  (project_started ?proj - project ?state_proj state)
+  (project_done ?proj - project ?state_proj state)
+  (developer_at ?dev - developer ?task_dev - task)
+  (tester_at ?tester_c - tester ?task_tester - task)
+  (task_is ?t - task ?state-t state-task)
+  (is_workable ?t - task ?role - roles)
+
 	(passenger-at ?person - passenger ?floor - count)
 	(boarded ?person - passenger ?lift - elevator)
 	(lift-at ?lift - elevator ?floor - count)
@@ -18,8 +26,37 @@
 )
 
 (:functions (total-cost) - number
-            (travel-slow ?f1 - count ?f2 - count) - number
-            (travel-fast ?f1 - count ?f2 - count) - number 
+            (work-fast ?t - task ?e - expertise) - number
+            (work-medium ?t - task ?e - expertise) - number
+            (work-slow ?t - task ?e - expertise) - number
+)
+
+(:action start_project
+  :parameters(?proj - project ?state_proj_c - state ?state_proj_s - state)
+  :precondition (and (project_started ?proj ?state_proj) (not (project_done ?proj ?state_proj)))
+  :effect ()
+)
+
+(:action develop_task
+  :parameters(?dev - developer ?t - task ?initial_s - state ?final_s - state ?e - expertise)
+  :preconditions (and (developer_at ?dev ?t) (task_is ?t ?initial_s) (not(task_is ?t ?final_s)) (is_workable ?t ?dev))
+  :effect (and (task_is ?t ?final_s) (increase (total-cost) (work-medium ?t ?e))
+)
+
+(:action test_task
+  :parameters
+)
+
+(:action assign_developer_to_task
+  :parameters
+)
+
+(:action assign_tester_to_task
+  :parameters
+)
+
+(:action finish_project
+  :parameters
 )
 
 (:action move-up-slow
