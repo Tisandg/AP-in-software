@@ -1,93 +1,76 @@
 (define (domain software-development-process)
   (:requirements :typing :action-costs)
   (:types roles - object
-	        developer tester - roles
-   	      project task state expertise time - object
-          state-project state-task - state
-          time-limit time-required-dev time-required-test - time
+          developer tester - roles
+	        dev_jr dev_ssr dev_sr - developer
+	        tester_jr tester_ssr tester_sr - tester
+   	      project task state - object
+          state-project state-task state-roles - state
+  )
+  
+  (:predicates 
+    (task-in ?t - task ?state-t state-task)
+    (role-is ?r - roles ?s state-roles)
+    (assigned-to ?t - task ?individual-roles)
+    (next ?s1 - state ?s2 - state)
+    (can-work ?r - roles ?t - task)
   )
 
-(:predicates 
-  (project_started ?proj - project ?state_proj state)
-  (project_done ?proj - project ?state_proj state)
-  (developer_at ?dev - developer ?task_dev - task)
-  (tester_at ?tester_c - tester ?task_tester - task)
-  (task_is ?t - task ?state-t state-task)
-  (is_workable ?t - task ?role - roles)
+  (:functions (total-time) - number
+              (work-fast ?dev - developer ?t - task) - number
+              (work-medium ?dev - developer ?t - task) - number
+              (work-slow ?dev - developer ?t - task) - number
+              (test-fast ?testman - tester ?t - task) - number
+              (test-medium ?testman - tester ?t - task) - number
+              (test-slow ?testman - tester ?t - task) - number
+  )
 
-	(passenger-at ?person - passenger ?floor - count)
-	(boarded ?person - passenger ?lift - elevator)
-	(lift-at ?lift - elevator ?floor - count)
-	(reachable-floor ?lift - elevator ?floor - count)
-	(above ?floor1 - count ?floor2 - count)
-	(passengers ?lift - elevator ?n - count)
-	(can-hold ?lift - elevator ?n - count)
-	(next ?n1 - count ?n2 - count)
+  (:action assign_developer_to_task
+    :parameters (?dev - developer ?t - task ?previous_s - state-task ?next_s - state-task ?free - state-roles ?bussy - state-roles)
+    :preconditions (and (role-is ?dev ?free)  (not(role-is ?dev ?bussy))  (not(assigned-to ?t ?dev))  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (not(can-work ?dev ?t))  (next ?previous_s ?next_s))
+    :effects (and (role-is ?dev ?bussy) (not(role-is ?dev ?free)) (assigned-to ?t ? dev) (task-in ?t ?next_s)  (not (task-in ?t ?previous_s)) (can-work ?dev ?t))
+  )
+
+  (:action develop_task_slow
+    :parameters (?dev - dev_jr ?t - task ?previous_s - state-task ?next_s - state-task ?free - state-roles ?bussy - state-roles)
+    :preconditions (and (role-is ?dev ?bussy)  (not(role-is ?dev ?free))  (assigned-to ?t ?dev)  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (can-work ?dev ?t)  (next ?previous_s ?next_s))
+    :effects ( and (role-is ?dev ?free) (not(role-is ?dev ?bussy)) (not (assigned-to ?t ? dev)) (task-in ?t ?next_s)  (not (task-in ?t ?previous_s)) (not(can-work ?dev ?t)) (increase (total-time) (work-slow ?previous_s ?next_s)) )
+  )
+
+  (:action develop_task_medium
+    :parameters (?dev - dev_ssr ?t - task ?previous_s - state-task ?next_s - state-task ?free - state-roles ?bussy - state-roles)
+    :preconditions (and (role-is ?dev ?bussy)  (not(role-is ?dev ?free))  (assigned-to ?t ?dev)  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (can-work ?dev ?t)  (next ?previous_s ?next_s))
+    :effects ( and (role-is ?dev ?free) (not(role-is ?dev ?bussy)) (not (assigned-to ?t ? dev)) (task-in ?t ?next_s)  (not (task-in ?t ?previous_s)) (not(can-work ?dev ?t)) (increase (total-time) (work-medium ?previous_s ?next_s)) )
+  )
+
+  (:action develop_task_fast
+    :parameters (?dev - dev_sr ?t - task ?previous_s - state-task ?next_s - state-task ?free - state-roles ?bussy - state-roles)
+    :preconditions (and (role-is ?dev ?bussy)  (not(role-is ?dev ?free))  (assigned-to ?t ?dev)  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (can-work ?dev ?t) (next ?previous_s ?next_s) )
+    :effects ( and (role-is ?dev ?free) (not(role-is ?dev ?bussy)) (not (assigned-to ?t ? dev)) (task-in ?t ?next_s)  (not (task-in ?t ?previous_s)) (not(can-work ?dev ?t)) (increase (total-time) (work-fast ?previous_s ?next_s)) )
+  )
+
+  (:action assign_tester_to_task
+    :parameters (?testerman - tester ?t - task ?previous_s - state-task ?next_s - state-task ?free - state-roles ?bussy - state-roles)
+    :preconditions (and (role-is ?testerman ?free)  (not(role-is ?testerman ?bussy))  (not(assigned-to ?t ?testerman))  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (not(can-work ?dev ?t)) (next ?previous_s ?next_s) )
+    :effects (and (role-is ?testerman ?bussy) (not(role-is ?testerman ?free)) (assigned-to ?t ?testerman) (task-in ?t ?next_s)  (not (task-in ?t ?previous_s)) (can-work ?testerman ?t))
+  )
+
+  (:action test_task_slow
+    :parameters (?testerman - tester_jr ?t - task ?previous_s - state-task ?next_s - state-task ?free - state-roles ?bussy - state-roles)
+    :preconditions (and (role-is ?testerman ?bussy)  (not(role-is ?testerman ?free))  (assigned-to ?t ?testerman)  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (can-work ?testerman ?t) (next ?previous_s ?next_s))
+    :effects ( and (role-is ?testerman ?free) (not (role-is ?testerman ?bussy)) (not (assigned-to ?t ?testerman)) (not (task-in ?t ?previous_s)) (task-in ?t ?next_s) (not(can-work ?testerman ?t)) (increase (total-time) (test-slow ?previous_s ?next_s)) )
+  )
+
+  (:action test_task_medium
+    :parameters (?testerman - tester_ssr ?t - task ?previous_s - state-task ?next_s - state-task ?free - state-roles ?bussy - state-roles)
+    :preconditions (and (role-is ?testerman ?bussy)  (not(role-is ?testerman ?free))  (assigned-to ?t ?testerman)  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (can-work ?testerman ?t)  (next ?previous_s ?next_s) )
+    :effects ( and (role-is ?testerman ?free) (not (role-is ?testerman ?bussy)) (not (assigned-to ?t ?testerman)) (not (task-in ?t ?previous_s)) (task-in ?t ?next_s) (not(can-work ?testerman ?t)) (increase (total-time) (test-medium ?previous_s ?next_s)) )
+  )
+
+  (:action test_task_fast
+    :parameters (?testerman - tester_sr ?t - task ?previous_s - state-task ?next_s - state-task ?free - state-roles ?bussy - state-roles)
+    :preconditions ( and (role-is ?testerman ?bussy)  (not(role-is ?testerman ?free))  (assigned-to ?t ?testerman)  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (can-work ?testerman ?t) (next ?previous_s ?next_s) )
+    :effects ( and (role-is ?testerman ?free) (not (role-is ?testerman ?bussy)) (not (assigned-to ?t ?testerman)) (not (task-in ?t ?previous_s)) (task-in ?t ?next_s) (not(can-work ?testerman ?t)) (increase (total-time) (test-fast ?previous_s ?next_s)) )
+  )
+
 )
-
-(:functions (total-cost) - number
-            (work-fast ?t - task ?e - expertise) - number
-            (work-medium ?t - task ?e - expertise) - number
-            (work-slow ?t - task ?e - expertise) - number
-)
-
-(:action start_project
-  :parameters(?proj - project ?state_proj_c - state ?state_proj_s - state)
-  :precondition (and (project_started ?proj ?state_proj) (not (project_done ?proj ?state_proj)))
-  :effect ()
-)
-
-(:action develop_task
-  :parameters(?dev - developer ?t - task ?initial_s - state ?final_s - state ?e - expertise)
-  :preconditions (and (developer_at ?dev ?t) (task_is ?t ?initial_s) (not(task_is ?t ?final_s)) (is_workable ?t ?dev))
-  :effect (and (task_is ?t ?final_s) (increase (total-cost) (work-medium ?t ?e))
-)
-
-(:action test_task
-  :parameters
-)
-
-(:action assign_developer_to_task
-  :parameters
-)
-
-(:action assign_tester_to_task
-  :parameters
-)
-
-(:action finish_project
-  :parameters
-)
-
-(:action move-up-slow
-  :parameters (?lift - slow-elevator ?f1 - count ?f2 - count )
-  :precondition (and (lift-at ?lift ?f1) (above ?f1 ?f2 ) (reachable-floor ?lift ?f2) )
-  :effect (and (lift-at ?lift ?f2) (not (lift-at ?lift ?f1)) (increase (total-cost) (travel-slow ?f1 ?f2))))
-
-(:action move-down-slow
-  :parameters (?lift - slow-elevator ?f1 - count ?f2 - count )
-  :precondition (and (lift-at ?lift ?f1) (above ?f2 ?f1 ) (reachable-floor ?lift ?f2) )
-  :effect (and (lift-at ?lift ?f2) (not (lift-at ?lift ?f1)) (increase (total-cost) (travel-slow ?f2 ?f1))))
-
-(:action move-up-fast
-  :parameters (?lift - fast-elevator ?f1 - count ?f2 - count )
-  :precondition (and (lift-at ?lift ?f1) (above ?f1 ?f2 ) (reachable-floor ?lift ?f2) )
-  :effect (and (lift-at ?lift ?f2) (not (lift-at ?lift ?f1)) (increase (total-cost) (travel-fast ?f1 ?f2))))
-
-(:action move-down-fast
-  :parameters (?lift - fast-elevator ?f1 - count ?f2 - count )
-  :precondition (and (lift-at ?lift ?f1) (above ?f2 ?f1 ) (reachable-floor ?lift ?f2) )
-  :effect (and (lift-at ?lift ?f2) (not (lift-at ?lift ?f1)) (increase (total-cost) (travel-fast ?f2 ?f1))))
-
-(:action board
-  :parameters (?p - passenger ?lift - elevator ?f - count ?n1 - count ?n2 - count)
-  :precondition (and  (lift-at ?lift ?f) (passenger-at ?p ?f) (passengers ?lift ?n1) (next ?n1 ?n2) (can-hold ?lift ?n2) )
-  :effect (and (not (passenger-at ?p ?f)) (boarded ?p ?lift) (not (passengers ?lift ?n1)) (passengers ?lift ?n2) ))
-
-(:action leave 
-  :parameters (?p - passenger ?lift - elevator ?f - count ?n1 - count ?n2 - count)
-  :precondition (and  (lift-at ?lift ?f) (boarded ?p ?lift) (passengers ?lift ?n1) (next ?n2 ?n1) )
-  :effect (and (passenger-at ?p ?f) (not (boarded ?p ?lift)) (not (passengers ?lift ?n1)) (passengers ?lift ?n2) ))
-  
-)
-
