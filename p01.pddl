@@ -94,7 +94,7 @@
   (= (test-slow tester_jr t1) 22)    (= (test-slow tester_jr t2) 17)    (= (test-slow tester_jr t3) 10)
   (= (test-slow tester_jr t4) 18)    (= (test-slow tester_jr t5) 6)
 
-  (= (total-time) 0)
+  (= (total-cost) 0)
 
 )
 
@@ -108,6 +108,6 @@
   )
 )
 
-(:metric minimize (total-time))
+(:metric minimize (total-cost))
 
 )
