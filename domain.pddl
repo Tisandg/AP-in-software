@@ -8,15 +8,15 @@
         state-task state-roles - state
 )
 (:predicates 
-  (task-in ?t - task ?s - state-task)
-  (role-is ?r - roles ?s - state-roles)
-  (assigned-to ?t - task ?r - roles)
   (next ?s1 - state ?s2 - state)
   (can-work ?role - roles ?sr - state-roles)
   (can-assign ?t - task ?s - state-task)
   (can-develop ?t - task ?s - state-task)
   (can-test ?t - task ?s - state-task)
   (can-finalize ?t - task ?s - state-task)
+  (task-in ?t - task ?s - state-task)
+  (role-is ?r - roles ?s - state-roles)
+  (assigned-to ?t - task ?r - roles)
 )
 
 (:functions (total-cost) - number
