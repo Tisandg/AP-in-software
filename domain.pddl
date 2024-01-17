@@ -7,13 +7,15 @@
    	      project task state - object
           state-project state-task state-roles - state
   )
-  
   (:predicates 
     (task-in ?t - task ?state-t state-task)
     (role-is ?r - roles ?s state-roles)
     (assigned-to ?t - task ?individual-roles)
     (next ?s1 - state ?s2 - state)
-    (can-work ?r - roles ?t - task)
+    (can-assign ?t - task ?s - state-task)
+    (can-develop ?t - task ?s - state-task)
+    (can-test ?t - task ?s - state-task)
+    (can-finalize ?t - task ?s - state-task)
   )
 
   (:functions (total-time) - number
@@ -27,50 +29,50 @@
 
   (:action assign_developer_to_task
     :parameters (?dev - developer ?t - task ?previous_s - state-task ?next_s - state-task ?free - state-roles ?bussy - state-roles)
-    :preconditions (and (role-is ?dev ?free)  (not(role-is ?dev ?bussy))  (not(assigned-to ?t ?dev))  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (not(can-work ?dev ?t))  (next ?previous_s ?next_s))
-    :effects (and (role-is ?dev ?bussy) (not(role-is ?dev ?free)) (assigned-to ?t ? dev) (task-in ?t ?next_s)  (not (task-in ?t ?previous_s)) (can-work ?dev ?t))
+    :preconditions (and (role-is ?dev ?free)  (not(role-is ?dev ?bussy))  (not(assigned-to ?t ?dev))  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (can-assign ?t ?previous_s)  (next ?previous_s ?next_s))
+    :effects (and (role-is ?dev ?bussy) (not(role-is ?dev ?free)) (assigned-to ?t ? dev) (task-in ?t ?next_s)  (not (task-in ?t ?previous_s)) )
   )
 
   (:action develop_task_slow
     :parameters (?dev - dev_jr ?t - task ?previous_s - state-task ?next_s - state-task ?free - state-roles ?bussy - state-roles)
-    :preconditions (and (role-is ?dev ?bussy)  (not(role-is ?dev ?free))  (assigned-to ?t ?dev)  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (can-work ?dev ?t)  (next ?previous_s ?next_s))
-    :effects ( and (role-is ?dev ?free) (not(role-is ?dev ?bussy)) (not (assigned-to ?t ? dev)) (task-in ?t ?next_s)  (not (task-in ?t ?previous_s)) (not(can-work ?dev ?t)) (increase (total-time) (work-slow ?previous_s ?next_s)) )
+    :preconditions (and (role-is ?dev ?bussy)  (not(role-is ?dev ?free))  (assigned-to ?t ?dev)  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (can-develop ?t ?previous_s)  (next ?previous_s ?next_s))
+    :effects ( and (role-is ?dev ?free) (not(role-is ?dev ?bussy)) (not (assigned-to ?t ? dev)) (task-in ?t ?next_s)  (not (task-in ?t ?previous_s)) (increase (total-time) (work-slow ?previous_s ?next_s)) )
   )
 
   (:action develop_task_medium
     :parameters (?dev - dev_ssr ?t - task ?previous_s - state-task ?next_s - state-task ?free - state-roles ?bussy - state-roles)
-    :preconditions (and (role-is ?dev ?bussy)  (not(role-is ?dev ?free))  (assigned-to ?t ?dev)  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (can-work ?dev ?t)  (next ?previous_s ?next_s))
-    :effects ( and (role-is ?dev ?free) (not(role-is ?dev ?bussy)) (not (assigned-to ?t ? dev)) (task-in ?t ?next_s)  (not (task-in ?t ?previous_s)) (not(can-work ?dev ?t)) (increase (total-time) (work-medium ?previous_s ?next_s)) )
+    :preconditions (and (role-is ?dev ?bussy)  (not(role-is ?dev ?free))  (assigned-to ?t ?dev)  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (can-develop ?t ?previous_s)  (next ?previous_s ?next_s))
+    :effects ( and (role-is ?dev ?free) (not(role-is ?dev ?bussy)) (not (assigned-to ?t ? dev)) (task-in ?t ?next_s)  (not (task-in ?t ?previous_s)) (increase (total-time) (work-medium ?previous_s ?next_s)) )
   )
 
   (:action develop_task_fast
     :parameters (?dev - dev_sr ?t - task ?previous_s - state-task ?next_s - state-task ?free - state-roles ?bussy - state-roles)
-    :preconditions (and (role-is ?dev ?bussy)  (not(role-is ?dev ?free))  (assigned-to ?t ?dev)  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (can-work ?dev ?t) (next ?previous_s ?next_s) )
-    :effects ( and (role-is ?dev ?free) (not(role-is ?dev ?bussy)) (not (assigned-to ?t ? dev)) (task-in ?t ?next_s)  (not (task-in ?t ?previous_s)) (not(can-work ?dev ?t)) (increase (total-time) (work-fast ?previous_s ?next_s)) )
+    :preconditions (and (role-is ?dev ?bussy)  (not(role-is ?dev ?free))  (assigned-to ?t ?dev)  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (can-develop ?t ?previous_s) (next ?previous_s ?next_s) )
+    :effects ( and (role-is ?dev ?free) (not(role-is ?dev ?bussy)) (not (assigned-to ?t ? dev)) (task-in ?t ?next_s)  (not (task-in ?t ?previous_s)) (increase (total-time) (work-fast ?previous_s ?next_s)) )
   )
 
   (:action assign_tester_to_task
     :parameters (?testerman - tester ?t - task ?previous_s - state-task ?next_s - state-task ?free - state-roles ?bussy - state-roles)
-    :preconditions (and (role-is ?testerman ?free)  (not(role-is ?testerman ?bussy))  (not(assigned-to ?t ?testerman))  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (not(can-work ?dev ?t)) (next ?previous_s ?next_s) )
-    :effects (and (role-is ?testerman ?bussy) (not(role-is ?testerman ?free)) (assigned-to ?t ?testerman) (task-in ?t ?next_s)  (not (task-in ?t ?previous_s)) (can-work ?testerman ?t))
+    :preconditions (and (role-is ?testerman ?free)  (not(role-is ?testerman ?bussy))  (not(assigned-to ?t ?testerman))  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s)) (next ?previous_s ?next_s) (can-test ?t ?previous_s))
+    :effects (and (role-is ?testerman ?bussy) (not(role-is ?testerman ?free)) (assigned-to ?t ?testerman) (task-in ?t ?next_s)  (not (task-in ?t ?previous_s)) )
   )
 
   (:action test_task_slow
     :parameters (?testerman - tester_jr ?t - task ?previous_s - state-task ?next_s - state-task ?free - state-roles ?bussy - state-roles)
-    :preconditions (and (role-is ?testerman ?bussy)  (not(role-is ?testerman ?free))  (assigned-to ?t ?testerman)  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (can-work ?testerman ?t) (next ?previous_s ?next_s))
-    :effects ( and (role-is ?testerman ?free) (not (role-is ?testerman ?bussy)) (not (assigned-to ?t ?testerman)) (not (task-in ?t ?previous_s)) (task-in ?t ?next_s) (not(can-work ?testerman ?t)) (increase (total-time) (test-slow ?previous_s ?next_s)) )
+    :preconditions (and (role-is ?testerman ?bussy)  (not(role-is ?testerman ?free))  (assigned-to ?t ?testerman)  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (can-finalize ?t ?previous_s) (next ?previous_s ?next_s))
+    :effects ( and (role-is ?testerman ?free) (not (role-is ?testerman ?bussy)) (not (assigned-to ?t ?testerman)) (not (task-in ?t ?previous_s)) (task-in ?t ?next_s) (increase (total-time) (test-slow ?previous_s ?next_s)) )
   )
 
   (:action test_task_medium
     :parameters (?testerman - tester_ssr ?t - task ?previous_s - state-task ?next_s - state-task ?free - state-roles ?bussy - state-roles)
-    :preconditions (and (role-is ?testerman ?bussy)  (not(role-is ?testerman ?free))  (assigned-to ?t ?testerman)  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (can-work ?testerman ?t)  (next ?previous_s ?next_s) )
-    :effects ( and (role-is ?testerman ?free) (not (role-is ?testerman ?bussy)) (not (assigned-to ?t ?testerman)) (not (task-in ?t ?previous_s)) (task-in ?t ?next_s) (not(can-work ?testerman ?t)) (increase (total-time) (test-medium ?previous_s ?next_s)) )
+    :preconditions (and (role-is ?testerman ?bussy)  (not(role-is ?testerman ?free))  (assigned-to ?t ?testerman)  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (can-finalize ?t ?previous_s)  (next ?previous_s ?next_s) )
+    :effects ( and (role-is ?testerman ?free) (not (role-is ?testerman ?bussy)) (not (assigned-to ?t ?testerman)) (not (task-in ?t ?previous_s)) (task-in ?t ?next_s) (increase (total-time) (test-medium ?previous_s ?next_s)) )
   )
 
   (:action test_task_fast
     :parameters (?testerman - tester_sr ?t - task ?previous_s - state-task ?next_s - state-task ?free - state-roles ?bussy - state-roles)
-    :preconditions ( and (role-is ?testerman ?bussy)  (not(role-is ?testerman ?free))  (assigned-to ?t ?testerman)  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s))  (can-work ?testerman ?t) (next ?previous_s ?next_s) )
-    :effects ( and (role-is ?testerman ?free) (not (role-is ?testerman ?bussy)) (not (assigned-to ?t ?testerman)) (not (task-in ?t ?previous_s)) (task-in ?t ?next_s) (not(can-work ?testerman ?t)) (increase (total-time) (test-fast ?previous_s ?next_s)) )
+    :preconditions ( and (role-is ?testerman ?bussy)  (not(role-is ?testerman ?free))  (assigned-to ?t ?testerman)  (task-in ?t ?previous_s)  (not(task-in ?t ?next_s)) (can-finalize ?t ?previous_s) (next ?previous_s ?next_s) )
+    :effects ( and (role-is ?testerman ?free) (not (role-is ?testerman ?bussy)) (not (assigned-to ?t ?testerman)) (not (task-in ?t ?previous_s)) (task-in ?t ?next_s) (increase (total-time) (test-fast ?previous_s ?next_s)) )
   )
 
 )
