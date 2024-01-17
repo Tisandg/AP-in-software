@@ -54,8 +54,8 @@
 
 (:goal
   (and
-    (task-in t1 finalizada)
-    (task-in t2 finalizada)
+    (task-in t1 desarrollada)
+    (task-in t2 desarrollada)
   )
 )
 
